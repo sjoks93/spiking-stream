@@ -8,7 +8,7 @@ memories:
     w_cost: 1000
     area: 0
     latency: 1
-    operands: [I1, I2, O]
+    operands: [I1, I2, O, H]
     ports:
       - name: rw_port_1
         type: read_write
@@ -23,6 +23,8 @@ memories:
           - O, tl
           - O, fl
           - O, th
+          - H, fh
+          - H, tl
     served_dimensions: [D1, D2]
 
 operational_array:

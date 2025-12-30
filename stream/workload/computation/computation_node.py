@@ -106,6 +106,9 @@ class ComputationNode(LayerNode, Node):
         self.operand_dimensionality_order: dict[LayerOperand, list[LayerDim]] = {
             layer_op: self.equation.get_r_layer_dims(layer_op) for layer_op in self.equation.get_contained_operands()
         }
+        if self.is_hidden:
+            self.operand_dimensionality_order[Constants.HIDDEN_LAYER_OP] = deepcopy(self.operand_dimensionality_order[self.output_operand])
+            self.operand_dimensionality_order[Constants.HIDDEN_LAYER_OP].remove(LayerDim(Constants.SEQUENCE_DIM))
         self.too_large_operands = []
         self.partially_constant_operands = partially_constant_operands
 

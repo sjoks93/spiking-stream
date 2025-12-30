@@ -228,6 +228,7 @@ class ZigZagCoreMappingEstimationStage(Stage):
         stack_this_node = next(stack for stack in self.layer_stacks if node.id in stack)
         node_is_alone_in_stack = len(stack_this_node) == 1
         if node_is_alone_in_stack:
+            # To-do: disable this mode
             return node.memory_operand_links.mem_operands
 
         # Step 1: get all the unique top level memories of the core
@@ -241,7 +242,8 @@ class ZigZagCoreMappingEstimationStage(Stage):
         for top_memory in unique_top_memories:
             top_level_capacity = top_memory.memory_instance.size
             memory_operands = list(top_memory.mem_level_of_operands.keys())
-            layer_operands = [memory_operand_link.mem_to_layer_op(mem_operand) for mem_operand in memory_operands]
+            layer_operands = [memory_operand_link.mem_to_layer_op(mem_operand) for mem_operand in memory_operands
+                              if memory_operand_link.contains_mem_op(mem_operand)]
             bits_to_be_stored_in_top_level: dict[MemoryOperand, int] = {}
             for layer_operand, memory_operand in zip(layer_operands, memory_operands, strict=False):
                 nb_bits = node.operand_size_bit[layer_operand]
