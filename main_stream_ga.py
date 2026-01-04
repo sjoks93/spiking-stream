@@ -12,10 +12,13 @@ _logging.basicConfig(level=_logging_level, format=_logging_format)
 
 ############################################INPUTS############################################
 accelerator = "stream/inputs/examples/hardware/tpu_like_quad_core.yaml"
-workload_path = "stream/inputs/examples/workload/resnet18.onnx"
-mapping_path = "stream/inputs/examples/mapping/tpu_like_quad_core_ga.yaml"
-mode = "fused"
-layer_stacks = [tuple(range(0, 11)), tuple(range(11, 22))] + list((i,) for i in range(22, 49))
+# workload_path = "stream/inputs/examples/workload/resnet18.onnx"
+workload_path = "stream/inputs/examples/workload/resnet_time.yaml"
+mapping_path = "stream/inputs/examples/mapping/tpu_like_quad_core.yaml"
+mode = "stems"
+layer_stacks = None
+spatial_cutoff = 1
+temporal_cuttoff = 2
 nb_ga_generations = 4
 nb_ga_individuals = 4
 ##############################################################################################
@@ -50,6 +53,8 @@ scme = optimize_allocation_ga(
     mapping=mapping_path,
     mode=mode,
     layer_stacks=layer_stacks,
+    spatial_cutoff=spatial_cutoff,
+    temporal_cutoff=temporal_cuttoff,
     nb_ga_generations=nb_ga_generations,
     nb_ga_individuals=nb_ga_individuals,
     experiment_id=experiment_id,

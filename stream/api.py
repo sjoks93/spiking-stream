@@ -32,7 +32,7 @@ def _sanity_check_inputs(
     assert os.path.exists(hardware), f"Hardware file {hardware} does not exist"
     assert isinstance(workload, ModelProto) or os.path.exists(workload), f"Workload file {workload} does not exist"
     assert os.path.exists(mapping), f"Mapping file {mapping} does not exist"
-    assert mode in ["lbl", "fused"], "Mode must be either 'lbl' or 'fused'"
+    assert mode in ["lbl", "fused", "stems"], "Mode must be either 'lbl' or 'fused' or 'stems'"
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -59,8 +59,10 @@ def optimize_allocation_ga(  # noqa: PLR0913
     hardware: str,
     workload: str,
     mapping: str,
-    mode: Literal["lbl"] | Literal["fused"],
+    mode: Literal["lbl"] | Literal["fused"] | Literal["stems"],
     layer_stacks: list[tuple[int, ...]],
+    spatial_cutoff: int,
+    temporal_cutoff: int,
     nb_ga_generations: int,
     nb_ga_individuals: int,
     experiment_id: str,
@@ -115,6 +117,8 @@ def optimize_allocation_ga(  # noqa: PLR0913
             nb_ga_individuals=nb_ga_individuals,  # number of individuals in each ga generation
             mode=mode,
             layer_stacks=layer_stacks,
+            spatial_cutoff=spatial_cutoff,
+            temporal_cutoff=temporal_cutoff,
             tiled_workload_path=tiled_workload_path,
             cost_lut_path=cost_lut_path,
             temporal_mapping_type=temporal_mapping_type,  # required by ZigZagCoreMappingEstimationStage
@@ -131,8 +135,10 @@ def optimize_allocation_co(  # noqa: PLR0913
     hardware: str,
     workload: str,
     mapping: str,
-    mode: Literal["lbl"] | Literal["fused"],
+    mode: Literal["lbl"] | Literal["fused"] | Literal["stems"],
     layer_stacks: list[tuple[int, ...]],
+    spatial_cutoff: int,
+    temporal_cutoff: int,
     experiment_id: str,
     output_path: str,
     skip_if_exists: bool = False,
@@ -185,6 +191,8 @@ def optimize_allocation_co(  # noqa: PLR0913
             loma_lpf_limit=6,  # required by LomaEngine
             mode=mode,
             layer_stacks=layer_stacks,
+            spatial_cutoff=spatial_cutoff,
+            temporal_cutoff=temporal_cutoff,
             tiled_workload_path=tiled_workload_path,
             cost_lut_path=cost_lut_path,
             allocations_path=allocations_path,

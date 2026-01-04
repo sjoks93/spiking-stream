@@ -45,26 +45,26 @@ def deduce_tensor_reuse_factors(
         data_reuse_factor (dict[list[int]]): a list of data reuse factor (base priority) for constant operands of each
         CN
     """
-    constant_operands = original_node.constant_operands + original_node.partially_constant_operands
+    operands = original_node.constant_operands + original_node.partially_constant_operands + original_node.hidden_operands
 
     # If there is no loop in the r_ir_loop, meaning that there is no outer-CN loop -> layer-by-layer
     if not outer_temporal_loops:
         return {}
 
-    if not constant_operands:
+    if not operands:
         return {}
 
     # Transfer the outer_temporal_loops to r_ir_loop.
     #  An example can be r_ir_loop = {'W': [('ir', 3), ('r', 2), ('ir', 3)]}.
     r_ir_LUT = original_node.loop_relevancy_info
     r_ir_loop: dict[LayerOperand, list[tuple[str, int]]] = {}
-    for constant_operand in constant_operands:
-        r_ir_loop[constant_operand] = []
+    for operand in operands:
+        r_ir_loop[operand] = []
         for loop in outer_temporal_loops:
-            if loop.dimension in r_ir_LUT.get_ir_layer_dims(constant_operand):
-                r_ir_loop[constant_operand].append(("ir", loop.size))
+            if loop.dimension in r_ir_LUT.get_ir_layer_dims(operand):
+                r_ir_loop[operand].append(("ir", loop.size))
             else:
-                r_ir_loop[constant_operand].append(("r", loop.size))
+                r_ir_loop[operand].append(("r", loop.size))
 
     # total_reuse_factor is the upper bound of the reuse factor that current layer CNs can reach
     total_reuse_factors = {
@@ -372,12 +372,12 @@ class TiledWorkloadGenerationStage(Stage):
             )
 
             # Override loop_ranges property
-            tile.update_loop_ranges(dim_min_max)
+            tile.update_loop_ranges(dim_min_max, original_node)
 
             # Initialize the priorities (total inter-CN data reuse factor) for the constant operands of this tile
-            for constant_operand in tile.constant_operands + tile.partially_constant_operands:
-                tensor = tile.operand_tensors[constant_operand]
-                tensor.set_base_priorities(tensor_reuse_factors[constant_operand][n])
+            for operand in tile.constant_operands + tile.partially_constant_operands + tile.hidden_operands:
+                tensor = tile.operand_tensors[operand]
+                tensor.set_base_priorities(tensor_reuse_factors[operand][n])
 
             tensors = self._replace_identical_tensors(tile, tensors)
             tile.data_produced_unique = self._get_data_produced_unique(tile)

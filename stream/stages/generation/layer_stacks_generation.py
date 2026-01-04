@@ -32,6 +32,8 @@ class LayerStacksGenerationStage(Stage):
         self.mode = kwargs.get("mode")
         self.stack_cutoff = kwargs.get("stack_cutoff", None)
         self.stack_cutoffs = kwargs.get("stack_cutoffs", None)
+        self.spatial_cutoff = kwargs.get("spatial_cutoff", 0)
+        self.temporal_cutoff = kwargs.get("temporal_cutoff", 0)
 
         # Get the weight capacity of all cores
         weight_capacities: dict[int, int] = {}
@@ -59,6 +61,8 @@ class LayerStacksGenerationStage(Stage):
 
         elif self.mode == "lbl":
             self.layer_stacks = self.get_layer_stacks_lbl()
+        elif self.mode == "stems":
+            self.layer_stacks = self.get_layer_stacks_stems()
         else:
             raise ValueError("Unsupported mode for layer stack determination.")
 
@@ -89,6 +93,39 @@ class LayerStacksGenerationStage(Stage):
                     pass
             updated_layer_stacks.append(tuple(update_stack))
         self.layer_stacks = updated_layer_stacks
+
+    def get_layer_stacks_stems(self):
+        stacks: list[tuple[int, ...]] = []
+        if self.temporal_cutoff > 0:
+            st_stack: list[int] = []
+            for n in sorted(list(self.workload.node_list), key=lambda n: n.id):
+                if not isinstance(n, ComputationNode):
+                    continue
+                id = n.id
+                if id < self.temporal_cutoff:
+                    st_stack.append(id)
+                else:
+                    break
+            stacks.append(tuple(st_stack))
+        if self.spatial_cutoff > self.temporal_cutoff:
+            sp_stack: list[int] = []
+            for n in sorted(list(self.workload.node_list), key=lambda n: n.id):
+                if not isinstance(n, ComputationNode):
+                    continue
+                id = n.id
+                if self.temporal_cutoff <= id < self.spatial_cutoff:
+                    sp_stack.append(id)
+                else:
+                    break
+            stacks.append(tuple(sp_stack))
+        # Add remaining layers layer by layer
+        for n in sorted(list(self.workload.node_list), key=lambda n: n.id):
+            if not isinstance(n, ComputationNode):
+                continue
+            id = n.id
+            if id >= max(self.spatial_cutoff, self.temporal_cutoff):
+                stacks.append((id,))
+        return stacks
 
     def get_layer_stacks_lbl(self):
         return [(id,) for id in sorted([n.id for n in self.workload.node_list if isinstance(n, ComputationNode)])]

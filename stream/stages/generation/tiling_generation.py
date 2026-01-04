@@ -57,6 +57,8 @@ class TilingGenerationStage(Stage):
         assert layer_stacks is not None
         self.layer_stacks = layer_stacks
         self.mode = kwargs.get("mode")
+        self.spatial_cutoff = kwargs.get("spatial_cutoff", 0)
+        self.temporal_cutoff = kwargs.get("temporal_cutoff", 0)
 
     def run(self):
         for node in self.workload.node_list:
@@ -78,19 +80,29 @@ class TilingGenerationStage(Stage):
 
     def set_valid_intra_core_tiling(self, node: ComputationNode, stack_size: int):
         self.remove_invalid_entries_from_intra_core_tiling(node)
-
-        if not node.intra_core_tiling:
-            match self.mode:
-                case "lbl":
-                    node.intra_core_tiling = []
-                case "fused":
+        if self.mode == "stems":
+            if node.id < self.spatial_cutoff:
+                if node.intra_core_tiling:
+                    assert len(node.intra_core_tiling) == 1, "In 'stems' mode, intra_core_tiling should have only the spatial entry."
+                else:
                     node.intra_core_tiling = self.generate_intra_core_tiling(node)
-                case _:
-                    raise ValueError("Unsupported mode for hint loops determination.")
+            else:
+                node.intra_core_tiling = []
+            if node.id < self.temporal_cutoff:
+                node.intra_core_tiling.append(self.generate_intra_core_sequence_tiling(node))
+        else:
+            if not node.intra_core_tiling:
+                match self.mode:
+                    case "lbl":
+                        node.intra_core_tiling = []
+                    case "fused":
+                        node.intra_core_tiling = self.generate_intra_core_tiling(node)
+                    case _:
+                        raise ValueError("Unsupported mode for hint loops determination.")
 
-        # Override the intra_core_tiling in case the node is alone in a stack
-        if stack_size == 1:
-            node.intra_core_tiling = []
+            # Override the intra_core_tiling in case the node is alone in a stack
+            if stack_size == 1:
+                node.intra_core_tiling = []
 
     def set_valid_inter_core_tiling(self, node: ComputationNode):
         self.remove_invalid_entries_from_inter_core_tiling(node)
@@ -145,9 +157,14 @@ class TilingGenerationStage(Stage):
 
         return partition_dim
 
+    def generate_intra_core_sequence_tiling(self, node: ComputationNode) -> tuple[LayerDim, int]:
+        sequence_dim = node.sequence_dim
+        size = node.layer_dim_sizes[sequence_dim]
+        return (sequence_dim, size)
+
     def generate_intra_core_tiling(self, node: ComputationNode) -> TILING_T:
         partition_dim = self.get_fusion_partition_dim(node)
-        size = min(TilingGenerationStage.FUSION_PARTITION_SIZE_DEFAULT, node.layer_dim_sizes[partition_dim])
+        size = max(TilingGenerationStage.FUSION_PARTITION_SIZE_DEFAULT, node.layer_dim_sizes[partition_dim])
         tiling = [(partition_dim, size)]
         return tiling
 
