@@ -59,8 +59,8 @@ memories:
           - O, fl
     served_dimensions: [D2]
 
-  sram_2MB:
-    size: 16777216
+  sram_1MB:
+    size: 8388608
     r_cost: 416.16
     w_cost: 378.4
     area: 0
