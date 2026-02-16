@@ -69,13 +69,7 @@ class ComputationNodeWorkload(DiGraphWrapper[ComputationNode]):
         # TODO -> use get_real_nb_predecessors instead? or remove the empty intra-core edges?
         """
         out_degrees = self.out_degree()
-        layer_ids = set(n.id for n, _ in out_degrees)
-        sink_layer_ids = [
-            curr_id
-            for curr_id in layer_ids
-            # x: (node, out_degree). Filter by id -> map to out_degree == 0 -> check if all are 0
-            if all(map(lambda x: x[1] == 0, filter(lambda x: x[0].id == curr_id, out_degrees)))
-        ]
+        sink_layer_ids = set(n.id for n, out_degree in out_degrees if out_degree == 0)
         return sink_layer_ids
 
     def get_subgraph(self, nodes: list[ComputationNode]) -> "ComputationNodeWorkload":
