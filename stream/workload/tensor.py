@@ -3,9 +3,7 @@ from typing import TYPE_CHECKING, TypeAlias
 from zigzag.datatypes import LayerDim, LayerOperand
 
 if TYPE_CHECKING:
-    from zigzag.hardware.architecture.memory_instance import MemoryInstance
 
-    from stream.cost_model.memory_manager import MemoryManager
     from stream.hardware.architecture.accelerator import Accelerator
     from stream.workload.computation.computation_node import LOOP_RANGES_T, ComputationNode
     from stream.workload.onnx_workload import ComputationNodeWorkload
@@ -42,7 +40,7 @@ class Tensor:
         self.loop_dimensions = loop_dimensions
         self.__loop_ranges = loop_ranges
         self.base_priority: None | int = None  # Will be set when we know how many successors this node has (static)
-        self.instance_priorities: int = 0
+        self.tensor_priority: int = 0
         self.id = (self.origin.id, self.origin.sub_id, layer_operand)
         self.equality_hash = hash((self.origin.id, self.layer_operand, self.loop_ranges))
         self.__static_hash = hash((origin, layer_operand))
@@ -50,20 +48,23 @@ class Tensor:
     def set_base_priorities(self, base_priority: int):
         self.base_priority = base_priority
 
-    def get_instance_priority(self):
-        return self.instance_priority
+    def get_tensor_priority(self):
+        return self.tensor_priority
+    
+    def decrement_tensor_priority(self):
+        self.tensor_priority -= 1
 
-    def initialize_instance_priorities(
-        self, g: "ComputationNodeWorkload", node: "ComputationNode", accelerator: "Accelerator"
+    def initialize_tensor_priority(
+        self, g: "ComputationNodeWorkload", node: "ComputationNode"
     ):
         if self.layer_operand == node.output_operand:
             out_edges = [(succ, d) for n, succ, d in g.out_edges(node, data=True) if succ.id != n.id]
-            self.instance_priority = len(out_edges)
+            self.tensor_priority = len(out_edges)
 
         else:
             if self.base_priority is None:
                 return  # No base priority set, this tensor will not be spawned as it will use previous layer outputs
-            self.instance_priority = self.base_priority
+            self.tensor_priority = self.base_priority
 
     def __str__(self) -> str:
         return f"Tensor{self.id}"

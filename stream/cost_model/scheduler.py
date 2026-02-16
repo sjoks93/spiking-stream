@@ -123,7 +123,7 @@ class CoalaScheduler:
         """
         for n in self.G.node_list:
             for tensor in n.operand_tensors.values():
-                tensor.initialize_instance_priorities(self.G, n, self.accelerator)
+                tensor.initialize_tensor_priority(self.G, n)
 
     def initialize_offchip_tensors(self):
         """
@@ -747,7 +747,7 @@ class CoalaScheduler:
         for tensor_used_by_node in tensors:
             # TODO: tensor_memory_operand will be 'O' for activation tensors.
             # TODO: If the memory between input and output is not shared, this will give a wrong instance.
-            tensor_used_by_node.instance_priority -= 1
+            tensor_used_by_node.decrement_tensor_priority()
 
     def check_for_removal(
         self,
@@ -757,7 +757,7 @@ class CoalaScheduler:
     ):
         """Remove the tensor from the core if its priority is zero."""
         for tensor_used_by_node in tensors:
-            if tensor_used_by_node.get_instance_priority() == 0:
+            if tensor_used_by_node.get_tensor_priority() == 0:
                 instances_storing_tensor, _ = self.accelerator.memory_manager.find_tensor_in_top_instances(
                     tensor_used_by_node
                 )
