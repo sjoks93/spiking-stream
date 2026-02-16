@@ -874,17 +874,19 @@ class CoalaScheduler:
         >     # Assume all mem ops use the same instance and r_bw == w_bw == rw_bw
         >     available_offchip_bw = max(mem.r_bw for mem in self.offchip_top_instances)
         >     possible_parallel_nb_nodes = max(1, available_offchip_bw // required_bw)
+        > possible_parallel_nb_nodes = node.get_total_inter_core_splits()
+        > return 1 / possible_parallel_nb_nodes
         """
-        possible_parallel_nb_nodes = node.get_total_inter_core_splits()
-        return 1 / possible_parallel_nb_nodes
+        return 1
 
     def get_transfer_bandwidth_fraction_for_eviction(self, tensor: Tensor):
         """Get the fraction of the off-chip bandwidth to be used to evict this tensor at the given timestep.
         Instead of using the total inter-core splits of the current node, we use the inter-core tiling (i.e. the number
         of cores dealing with the tensor) of the source node of this tensor.
+        > nb_cores_storing_similar_tensor = tensor.origin.get_total_inter_core_splits()
+        > return 1 / nb_cores_storing_similar_tensor
         """
-        nb_cores_storing_similar_tensor = tensor.origin.get_total_inter_core_splits()
-        return 1 / nb_cores_storing_similar_tensor
+        return 1
 
     @property
     def total_cn_offchip_link_energy(self):
