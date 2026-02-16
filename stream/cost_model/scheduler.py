@@ -133,7 +133,7 @@ class CoalaScheduler:
             for op, tensor in n.operand_tensors.items():
                 # For constant operands or inputs of first node
                 if op in n.constant_operands + n.partially_constant_operands or (
-                    op != Constants.OUTPUT_LAYER_OP and len(self.G.in_edges(n)) == 0
+                    op != Constants.OUTPUT_LAYER_OP and op != Constants.HIDDEN_LAYER_OP and len(self.G.in_edges(n)) == 0
                 ):
                     if not any(
                         self.accelerator.contains_tensor(tensor, offchip_top_instance)
