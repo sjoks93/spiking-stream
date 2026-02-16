@@ -11,15 +11,15 @@ _logging_format = "%(asctime)s - %(name)s.%(funcName)s +%(lineno)s - %(levelname
 _logging.basicConfig(level=_logging_level, format=_logging_format)
 
 ############################################INPUTS############################################
-accelerator = "stream/inputs/examples/hardware/tpu_like_quad_core.yaml"
+accelerator = "stream/inputs/examples/hardware/tpu_like_single_core.yaml"
 # workload_path = "stream/inputs/examples/workload/resnet18.onnx"
 workload_path = "stream/inputs/examples/workload/resnet_time.yaml"
-mapping_path = "stream/inputs/examples/mapping/tpu_like_quad_core.yaml"
+mapping_path = "stream/inputs/examples/mapping/tpu_like_single_core.yaml"
 mode = "stems"
 layer_stacks = None
-spatial_cutoff = 0
+spatial_cutoff = 4
 temporal_cuttoff = 4
-nb_ga_generations = 2
+nb_ga_generations = 0
 nb_ga_individuals = 4
 ##############################################################################################
 
