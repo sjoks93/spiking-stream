@@ -191,7 +191,14 @@ class CoalaScheduler:
                 timestep = transfer_complete_timestep
 
             # Step 2: Transfer the tensors needed for this node to the core (from off-chip or from another core)
-            earliest_t = core_idle_from
+            transfer_headstart = sum(
+                ceil(
+                    tensor.size
+                    / (self.offchip_core.get_top_memory_instance(tensor_operand).ports[0].bw_max * transfer_bw_fraction)
+                )
+                for tensor, tensor_operand in zip(sub_tensors_this_candidate_needs, tensors_operands, strict=False)
+            )
+            earliest_t = core_idle_from - transfer_headstart
             for tensor, tensor_operand in zip(sub_tensors_this_candidate_needs, tensors_operands, strict=False):
                 transfer_complete_timestep = self.schedule_tensor_transfer(
                     tensor=tensor,
@@ -201,8 +208,7 @@ class CoalaScheduler:
                     earliest_t=earliest_t,
                     transfer_bandwidth_fraction=transfer_bw_fraction,
                 )
-                earliest_t = transfer_complete_timestep   
-            timestep = max(timestep, transfer_complete_timestep)
+                timestep = max(timestep, transfer_complete_timestep)
             # Step 2b: Create hidden tensor of this node if needed
             if best_candidate.skip_load:
                 hidden_tensor = best_candidate.get_hidden_tensor()
