@@ -115,7 +115,7 @@ class LayerStacksGenerationStage(Stage):
                 id = n.id
                 if self.temporal_cutoff <= id < self.spatial_cutoff:
                     sp_stack.append(id)
-                else:
+                elif id > self.spatial_cutoff:
                     break
             stacks.append(tuple(sp_stack))
         # Add remaining layers layer by layer
